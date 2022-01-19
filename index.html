@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <style>
+
+        :root{
+            --level: 2;
+        }
+
+        *{
+            box-sizing: border-box;
+            font-family: 'Segoe UI',SegoeUI,'Microsoft JhengHei',微軟正黑體,"Helvetica Neue",Helvetica,Arial,sans-serif;
+        }
+
+        body{
+            margin: 0;
+            background-color: #F06060;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .initialView{
+            display: flex;
+            /* display: none; */
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1{
+            color: #FFFFFF;
+            text-align: center;
+            font-size: 30px;
+        }
+
+        p{
+            font-size: 16px;
+            color: #FFA1A1;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .gameView{
+            display: none;
+            /* display: flex; */
+            position: relative;
+            flex-direction: column;
+        }
+
+        .score-table{
+            font-size: 20px;
+            font-weight: 700;
+            color: #FFFFFF;
+            margin: 0 auto 20px;
+        }
+
+        .game-timer{
+            font-size: 20px;
+            font-weight: bold;
+            color: #FFCACA;
+            background-color: #FD9090;
+            margin: 10px auto 20px;
+            padding: 10px 30px;
+            border-radius: 10px;
+        }
+
+        .pauseView{
+            position: absolute;
+            background-color: #93bff1be;
+            border-radius: 10px;
+            width: 60%;
+            height: 50%;
+            top: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .pauseView>h2{
+            font-size: 50px;
+            margin-top: 0;
+            color: #FF5151;
+        }
+
+        .btn {
+            font-size: 20px;
+            font-weight: 700;
+            text-align: center;
+            background-color: #FCAD26;
+            box-shadow: 0 5px #da9622;
+            border-radius: 7px;
+            padding: 10px 20px; 
+            margin: 0 10px; 
+        }
+
+        .start-btn{
+            width: 50%;
+        }
+
+        .game-btns{ 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            
+        }
+
+        .pause-btn,.restart-btn{
+            margin:30px 20px 0; 
+        } 
+
+        .btn:hover{
+            transform: scale(1.2);
+        }
+
+        .btn:active{
+            transform: scale(1);
+        }
+
+        .container{
+            border: 10px solid  #ddd;
+            background-color: #ddd;
+            border-radius: 10px;
+            width: 520px;
+            height: 520px;
+            display: flex;
+            flex-wrap: wrap;
+        }
+        .box{
+            width: calc(100%/var(--level));
+            height: calc(100%/var(--level));
+            border: 5px solid  #ddd;
+            border-radius: 10px;
+        }
+
+        .box.active{
+            opacity: 0.5;
+        }
+
+        .resultView{
+            display: none;
+        }
+
+        .resultView > h1{
+            font-size: 50px;
+        }
+
+        h2{
+            font-size: 20px;
+            color: #FFFFFF;
+            text-align: center;
+        }
+
+        h3{
+            font-size: 40px;
+            color: #000000;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        /* 倒數計時動畫 */
+        @keyframes countDownAni {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.2);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+            
+        }
+
+    </style>
+
+</head>
+<body>
+
+    <div class="initialView">
+        <h1>色弱遊戲</h1>
+        <p>找出所有色塊裡顏色不同的一個!!</p>
+        <div class="btn start-btn">START</div>   
+    </div>
+    
+    <div class="gameView">
+        <div class="score-table">
+            <span>得分：</span><span class="score">&nbsp;0</span>
+        </div>
+        <div class="game-timer">60</div>
+        <div class="container"></div>
+        <div class="game-btns">
+            <div class="btn pause-btn">PAUSE</div>
+            <div class="btn restart-btn">RESTART</div>    
+        </div>
+
+        <div class="pauseView">
+            <h2>暫停中!</h2>
+            <div class="btn continue-btn">CONTINUE</div>
+        </div> 
+            
+    </div>
+
+    <div class="resultView">
+        <h1>時間到!!!</h1>
+        <h2>經鑑定, 您是:</h2>
+        <h3 class="show-result"></h3>
+        <div class="btn againGame-btn">PLAY AGAIN</div>    
+    </div>
+
+    
+
+    <script>
+        const initialViewElement = document.querySelector('.initialView');
+        const startBtn = document.querySelector('.start-btn');
+
+        const gameViewElement = document.querySelector('.gameView')
+        const containerElement = document.querySelector('.container');
+        const scoreElement = document.querySelector('.score');
+        const timeElement = document.querySelector('.game-timer');
+        let answerElement = null;
+
+        const pauseViewElement = document.querySelector('.pauseView');
+        const pauseBtn = document.querySelector('.pause-btn');
+        const continueBtn = document.querySelector('.continue-btn');
+        const restartBtn = document.querySelector('.restart-btn');
+        const againGameBtn = document.querySelector('.againGame-btn');
+
+        const resultViewElement = document.querySelector('.resultView');
+        const showResultElement = document.querySelector('.show-result');
+       
+        let level = 2, again = 1, score = 0;
+        let last_frequency = 1, now_frequency = 1, frequency = 1;
+
+        let time = 60000;
+        let myTimerID = null;
+
+        let isPause = false;
+        
+        //開始遊戲
+        startBtn.addEventListener('click',function(){
+            initialViewElement.style['display'] = 'none';
+            gameViewElement.style['display'] = 'flex';
+            countDownControl();
+            nextGame();
+        });
+        
+
+        //產生盒子
+        function createBox(){
+            let boxes = '';
+            let r = Math.floor(Math.random()*256);
+            let g = Math.floor(Math.random()*256);
+            let b = Math.floor(Math.random()*256);
+            
+            //箱子數量
+            let boxesQuantity = Math.pow((level),2);
+            //正確答案的位子
+            let answerNumber =  Math.floor(Math.random()*boxesQuantity);
+            //寬高
+            //let w_and_h =Math.round(1/(level)*100000)/1000;                 //改變CSS變數值
+            let style = `style="background-color: rgb(${r}, ${g}, ${b}); --level:${level};"`;
+            //利用迴圈建立container裡面的box數量
+            for(let i = 0; i < boxesQuantity; i++){
+                if(i == answerNumber){
+                    boxes += `<div class="box active" ${style}></div>`;
+                }
+                else{
+                    boxes +=`<div class="box" ${style} ></div>`;
+                }
+            }
+            //放入html
+            containerElement.innerHTML = boxes;
+
+            //設定難度
+            answerElement = document .querySelector('.box.active');
+            answerElement.style.opacity = 0.5 + (score/130);
+            
+            //重複次數扣1次
+            again--;
+        }
+
+        //正確解答後,設置下一關
+        function answerCorrect(){
+            answerElement = document .querySelector('.box.active');
+            answerElement.addEventListener('click',function(){
+                
+                // 暫停狀態,直接不受理
+                if(isPause) return;
+
+                //分數增加
+                score++;
+                scoreElement.textContent = score;
+                //下一關
+                setLevel();
+                nextGame();
+            });
+        }
+
+        //設定關卡次數
+        function setLevel(){
+            //原遊戲困難度次數
+            // 2X2 1   	        L.1
+            // 3X3 1  	 	    L.2
+            // 4X4 1		    L.3
+            // 5X5 2		    L.4
+            // 6X6 2		    L.5
+            // 7X7 3		    L.6
+            // 8X8 6		    L.7
+            // 9x9 無限多次	     L.8
+
+            //使用費式數列
+            //1 1 2 3 5 8 13  Infinity
+            if(again == 0){
+                level++;
+                if(level < 8){
+                    again = frequency;
+                    last_frequency = now_frequency;
+                    now_frequency = frequency;
+                    frequency = last_frequency + now_frequency;
+                }
+                else{
+                    again = Infinity;
+                }     
+            }
+        }
+
+
+        function countDownControl(){
+    
+            countDown();
+
+            //暫停
+            pauseBtn.addEventListener('click',function(){
+                pauseViewElement.style['display'] = 'flex';
+                pause();
+                timeElement.style['animation-play-state'] = 'paused';
+                isPause = true; //調整為暫停狀態
+                
+            });
+
+            //繼續遊戲
+            continueBtn.addEventListener('click',function(){
+                pauseViewElement.style['display'] = 'none';
+                time += 1000;   //矯正
+                isPause = false;   //非暫停狀態
+                countDown();
+                if(time <= 10000){
+                    timeElement.style['animation-play-state'] = 'running';    
+                }
+            });
+
+            //重新開始遊戲
+            restartBtn.addEventListener('click',function(){
+                pauseViewElement.style['display'] = 'none';
+                pause();
+                timeElement.style['animation-play-state'] = 'paused';  
+                isPause = false;   //非暫停狀態
+                initGame();
+            });
+    
+        }
+
+
+
+        //倒數計時
+        function countDown(){
+            if(time){
+                time -=1000;
+                
+                if(myTimerID)  pause();
+                myTimerID = setTimeout(countDown,1000); //每一秒執行一次這函式    
+                timeElement.textContent = time/1000;
+                if(time == 10000){
+                    timeElement.style['color'] = '#FF0505';
+                    timeElement.style['background-color'] = '#FFFFFF';
+                    timeElement.style['animation'] = 'countDownAni 0.2s infinite running';  //動畫名,動畫執行時間,執行次數,動畫狀態
+                }
+            }
+            else{
+                //時間到
+                pause();
+                timeElement.style['animation-play-state'] = 'paused';
+                gameViewElement.style['display'] = 'none';
+                resultViewElement.style['display'] = 'block';
+                setResult();
+
+                //再一次遊戲
+                againGameBtn.addEventListener('click',function(){
+                    initGame();
+                });
+            }
+        }
+
+        //時間暫停
+        function pause(){
+            clearTimeout(myTimerID);
+        }
+
+
+        //結果設定
+        function setResult(){
+            let resultStr = '';
+             //蝙蝠  <=20,  小狗  <=30,  貓咪  <=40,   老虎  >40
+            if(score <=20){
+                resultStr = '蝙蝠 Lv';
+            }
+            else if(score <=30){
+                resultStr = '小狗 Lv';
+            }
+            else if(score <=40){
+                resultStr = '貓咪 Lv';
+            }
+            else{
+                resultStr = '老虎 Lv';
+            }
+            showResultElement.textContent = resultStr +score;
+        }
+
+        //初始化遊戲
+        function initGame(){
+            time = 60000;
+            level = 2;
+            again = 1;
+            score = 0;
+            now_frequency = 1;
+            frequency = 1;
+            scoreElement.textContent = score;
+            timeElement.style['color'] = '#FFCACA';
+            timeElement.style['background-color'] = '#FD9090';
+            resultViewElement.style['display'] = 'none';
+            gameViewElement.style['display'] = 'flex';
+            countDownControl();
+            nextGame();
+        }
+
+        //下一關遊戲
+        function nextGame(){
+            createBox();
+            answerCorrect();
+        }
+
+    </script>
+
+</body>
+</html>
